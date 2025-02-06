@@ -4,12 +4,12 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-               sh 'pipenv --python python3 sync'
+               bat 'pipenv --python python3 sync'
             }
         }
         stage('Test') {
             steps {
-               sh 'pipenv run pytest'
+               bat 'pipenv run pytest'
             }
         }
         stage('Package') {
@@ -17,7 +17,7 @@ pipeline {
 		    anyOf{ branch "master" ; branch 'release' }
 	    }
             steps {
-               sh 'zip -r sbdl.zip lib'
+               bat 'zip -r sbdl.zip lib'
             }
         }
 	stage('Release') {
@@ -25,7 +25,7 @@ pipeline {
 	      branch 'release'
 	   }
            steps {
-              sh "scp -i /home/prashant/cred/edge-node_key.pem -o 'StrictHostKeyChecking no' -r sbdl.zip log4j.properties sbdl_main.py sbdl_submit.sh conf prashant@40.117.123.105:/home/prashant/sbdl-qa"
+              bat "scp -i /home/prashant/cred/edge-node_key.pem -o 'StrictHostKeyChecking no' -r sbdl.zip log4j.properties sbdl_main.py sbdl_submit.sh conf prashant@40.117.123.105:/home/prashant/sbdl-qa"
            }
         }
 	stage('Deploy') {
@@ -33,7 +33,7 @@ pipeline {
 	      branch 'master'
 	   }
            steps {
-               sh "scp -i /home/prashant/cred/edge-node_key.pem -o 'StrictHostKeyChecking no' -r sbdl.zip log4j.properties sbdl_main.py sbdl_submit.sh conf prashant@40.117.123.105:/home/prashant/sbdl-prod"
+               bat "scp -i /home/prashant/cred/edge-node_key.pem -o 'StrictHostKeyChecking no' -r sbdl.zip log4j.properties sbdl_main.py sbdl_submit.sh conf prashant@40.117.123.105:/home/prashant/sbdl-prod"
            }
         }
     }

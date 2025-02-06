@@ -14,4 +14,10 @@ def get_spark_session(env):
             .enableHiveSupport() \
             .getOrCreate()
 
+def read_csv(spark, file_path):
+    df = spark.read \
+    .csv(file_path) \
+    .option("header", "true") \
+    .option("inferSchema", "true")
+
 
