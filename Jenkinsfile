@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-               bat 'C:\\Users\\marya\\AppData\\Roaming\\Python\\Python310\\Scripts\\pipenv.exe --python python3 sync'
+               bat 'C:\\Users\\marya\\AppData\\Roaming\\Python\\Python310\\Scripts\\pipenv.exe --python python sync'
             }
         }
         stage('Test') {
