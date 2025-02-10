@@ -91,7 +91,7 @@ def expected_contract_df(spark):
                                                  StructField('newValue', StringType()),
                                                  StructField('oldValue', NullType())]))])
 
-    return spark.read.format("json").schema(schema).load("test_data/results/contract_df.json")
+    return spark.read.format("json").schema(schema).load("test_data/results/final_df.json")
 
 @pytest.fixture(scope='session')
 def expected_final_df(spark):
