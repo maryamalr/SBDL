@@ -3,3 +3,5 @@
 .idea/*
 lib/__pycache__/*
 
+sbdl.conf
+
