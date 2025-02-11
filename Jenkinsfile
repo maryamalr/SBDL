@@ -1,6 +1,8 @@
 pipeline {
     agent any
-
+    environment {
+        HADOOP_HOME = 'C:\\Users\\marya\\Documents\\hadoop-3.3.6'
+    }
     stages {
         stage('Build') {
             steps {
