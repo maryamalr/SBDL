@@ -1,3 +1,6 @@
+from pyspark.sql.functions import to_timestamp, col, date_format, unix_timestamp, regexp_replace
+from pyspark.sql.types import TimestampType
+
 from lib import ConfigLoader
 
 def get_account_schema():
@@ -35,14 +38,16 @@ def read_accounts(spark, env, enable_hive, hive_db):
 def read_parties(spark, env, enable_hive, hive_db):
     runtime_filter = ConfigLoader.get_data_filter(env, "party.filter")
     if enable_hive:
-        return spark.sql("select * from "+ hive_db +".parties").where(runtime_filter)
+        return spark.sql("select * from " + hive_db + ".parties").where(runtime_filter)
     else:
-        return spark.read \
-    .format("csv") \
-    .option("header", "true") \
-    .schema(get_party_schema()) \
-    .load("test_data/parties/") \
-    .where(runtime_filter)
+        df = spark.read \
+            .format("csv") \
+            .option("header", "true") \
+            .option("timestampFormat", "yyyy-MM-dd'T'HH:mm:ss.SSSXXX") \
+            .schema(get_party_schema()) \
+            .load("test_data/parties/") \
+            .where(runtime_filter)
+        return df
 
 def read_address(spark, env, enable_hive, hive_db):
     runtime_filter = ConfigLoader.get_data_filter(env, "address.filter")

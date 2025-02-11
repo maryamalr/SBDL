@@ -10,6 +10,8 @@ pytest = "*"
 chispa = "*"
 nutter = "*"
 faker = "*"
+pandas = "*"
+pyarrow = "*"
 
 [dev-packages]
 
