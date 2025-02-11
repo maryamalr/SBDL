@@ -1,10 +1,10 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 from lib.ConfigLoader import get_config
 from lib import DataLoader, Transformations
 import pytest
 from pyspark import Row
 from pyspark.sql.types import StructType, StringType, StructField, NullType, TimestampType, ArrayType, DateType
-from chispa import assert_df_equality
+import chispa
 
 from lib.Utils import get_spark_session
 
@@ -38,21 +38,20 @@ def expected_party_rows():
             Row(load_date=date(2022, 8, 2), account_id='6982391067', party_id='9823462821', relation_type='F-S',
                 relation_start_date=datetime(2018, 7, 19, 18, 56, 57))]
 
-
 @pytest.fixture(scope='session')
 def parties_list():
     return [
-        (date(2022, 8, 2), '6982391060', '9823462810', 'F-N', datetime.fromisoformat('2019-07-29 06:21:32.000+05:30')),
-        (date(2022, 8, 2), '6982391061', '9823462811', 'F-N', datetime.fromisoformat('2018-08-31 05:27:22.000+05:30')),
-        (date(2022, 8, 2), '6982391062', '9823462812', 'F-N', datetime.fromisoformat('2018-08-25 15:50:29.000+05:30')),
-        (date(2022, 8, 2), '6982391063', '9823462813', 'F-N', datetime.fromisoformat('2018-05-11 07:23:28.000+05:30')),
-        (date(2022, 8, 2), '6982391064', '9823462814', 'F-N', datetime.fromisoformat('2019-06-06 14:18:12.000+05:30')),
-        (date(2022, 8, 2), '6982391065', '9823462815', 'F-N', datetime.fromisoformat('2019-05-04 05:12:37.000+05:30')),
-        (date(2022, 8, 2), '6982391066', '9823462816', 'F-N', datetime.fromisoformat('2019-05-15 10:39:29.000+05:30')),
-        (date(2022, 8, 2), '6982391067', '9823462817', 'F-N', datetime.fromisoformat('2018-05-16 09:53:04.000+05:30')),
-        (date(2022, 8, 2), '6982391068', '9823462818', 'F-N', datetime.fromisoformat('2017-11-27 01:20:12.000+05:30')),
-        (date(2022, 8, 2), '6982391067', '9823462820', 'F-S', datetime.fromisoformat('2017-11-20 14:18:05.000+05:30')),
-        (date(2022, 8, 2), '6982391067', '9823462821', 'F-S', datetime.fromisoformat('2018-07-19 18:56:57.000+05:30'))]
+        (date(2022, 8, 2), '6982391060', '9823462810', 'F-N', datetime.fromisoformat('2019-07-29 06:21:32.000+00:00')),
+        (date(2022, 8, 2), '6982391061', '9823462811', 'F-N', datetime.fromisoformat('2018-08-31 05:27:22.000+00:00')),
+        (date(2022, 8, 2), '6982391062', '9823462812', 'F-N', datetime.fromisoformat('2018-08-25 15:50:29.000+00:00')),
+        (date(2022, 8, 2), '6982391063', '9823462813', 'F-N', datetime.fromisoformat('2018-05-11 07:23:28.000+00:00')),
+        (date(2022, 8, 2), '6982391064', '9823462814', 'F-N', datetime.fromisoformat('2019-06-06 14:18:12.000+00:00')),
+        (date(2022, 8, 2), '6982391065', '9823462815', 'F-N', datetime.fromisoformat('2019-05-04 05:12:37.000+00:00')),
+        (date(2022, 8, 2), '6982391066', '9823462816', 'F-N', datetime.fromisoformat('2019-05-15 10:39:29.000+00:00')),
+        (date(2022, 8, 2), '6982391067', '9823462817', 'F-N', datetime.fromisoformat('2018-05-16 09:53:04.000+00:00')),
+        (date(2022, 8, 2), '6982391068', '9823462818', 'F-N', datetime.fromisoformat('2017-11-27 01:20:12.000+00:00')),
+        (date(2022, 8, 2), '6982391067', '9823462820', 'F-S', datetime.fromisoformat('2017-11-20 14:18:05.000+00:00')),
+        (date(2022, 8, 2), '6982391067', '9823462821', 'F-S', datetime.fromisoformat('2018-07-19 18:56:57.000+00:00'))]
 
 @pytest.fixture(scope='session')
 def expected_contract_df(spark):
@@ -91,7 +90,7 @@ def expected_contract_df(spark):
                                                  StructField('newValue', StringType()),
                                                  StructField('oldValue', NullType())]))])
 
-    return spark.read.format("json").schema(schema).load("test_data/results/final_df.json")
+    return spark.read.format("json").schema(schema).load("test_data/results/contract_df.json")
 
 @pytest.fixture(scope='session')
 def expected_final_df(spark):
@@ -181,7 +180,7 @@ def test_read_accounts(spark):
     accounts_df = DataLoader.read_accounts(spark, "LOCAL", False, None)
     assert accounts_df.count() == 8
 
-def test_read_parties(spark, expected_party_rows):
+def test_read_parties_row(spark, expected_party_rows):
     actual_party_rows = DataLoader.read_parties(spark, "LOCAL", False, None).collect()
     assert expected_party_rows == actual_party_rows
 
@@ -189,13 +188,19 @@ def test_get_contract(spark, expected_contract_df):
     accounts_df = DataLoader.read_accounts(spark, "LOCAL", False, None)
     actual_contract_df = Transformations.get_contract(accounts_df)
     assert  expected_contract_df.collect() == actual_contract_df.collect()
-    assert_df_equality(expected_contract_df, actual_contract_df, ignore_schema=True)
 
-# def test_read_parties(spark, parties_list):
-#     expected_df = spark.createDataFrame(parties_list)
-#     actual_df = DataLoader.read_parties(spark, "LOCAL", False, None)
-#     assert_df_equality(expected_df, actual_df, ignore_schema=True)
-
+# def test_kafka_kv_df(spark, expected_final_df):
+#     accounts_df = DataLoader.read_accounts(spark, "LOCAL", False, None)
+#     contract_df = Transformations.get_contract(accounts_df)
+#     parties_df = DataLoader.read_parties(spark, "LOCAL", False, None)
+#     relations_df = Transformations.get_relations(parties_df)
+#     address_df = DataLoader.read_address(spark, "LOCAL", False, None)
+#     relation_address_df = Transformations.get_address(address_df)
+#     party_address_df = Transformations.join_party_address(relations_df, relation_address_df)
+#     data_df = Transformations.join_contract_party(contract_df, party_address_df)
+#     actual_final_df = Transformations.apply_header(spark, data_df) \
+#         .select("keys", "payload")
+#     chispa.assert_df_equality(actual_final_df, expected_final_df, ignore_row_order=True, ignore_schema=True)
 
 
 
